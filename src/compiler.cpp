@@ -72,7 +72,7 @@ const std::string compile(std::string code) {
     }
 
     TokenBuffer buf(tokens);
-    out << "MINHEAP 256\nMINSTACK 0\n";
+    out << "BITS 16\nMINHEAP 9999\nMINSTACK 0\n";
     out << "MINREG 2\n";
     bool shouldLOD = true;
     std::vector<int> loops;
@@ -81,12 +81,24 @@ const std::string compile(std::string code) {
         
         switch (buf.current()) {
             case Token::TT_INCP: {
-                out << "INC R1 R1\n";
+                long long unsigned int count = 0;
+                while (buf.hasNext() && buf.current() == Token::TT_INCP) {
+                    buf.advance();
+                    count += 1;
+                    shouldIncBuf = false;
+                }
+                out << "ADD R1 R1 " << count << "\n";
                 shouldLOD = true;
                 break;
             }
             case Token::TT_DECP: {
-                out << "DEC R1 R1\n";
+                long long unsigned int count = 0;
+                while (buf.hasNext() && buf.current() == Token::TT_DECP) {
+                    buf.advance();
+                    count += 1;
+                    shouldIncBuf = false;
+                }
+                out << "SUB R1 R1 " << count << "\n";
                 shouldLOD = true;
                 break;
             }
@@ -142,6 +154,7 @@ const std::string compile(std::string code) {
                 }
                 out << "BNZ " << ".label_" << loops[loops.size()-1] << " R2 " << "\n";
                 loops.pop_back();
+                shouldLOD = false;
             }
         }
         if (shouldIncBuf) {
